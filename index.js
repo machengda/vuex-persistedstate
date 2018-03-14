@@ -1,10 +1,11 @@
 import merge from 'deepmerge';
 import shvl from 'shvl';
 
-export default function(options, storage, key) {
+export default function(options, storage, key, ignore) {
   options = options || {};
   storage = options.storage || (window && window.localStorage);
   key = options.key || 'vuex';
+  ignore = (options.ignore && options.ignore.length) || null;
 
   function canWriteStorage(storage) {
     try {
@@ -18,9 +19,18 @@ export default function(options, storage, key) {
 
   function getState(key, storage, value) {
     try {
-      return (value = storage.getItem(key)) && value !== 'undefined'
-        ? JSON.parse(value)
-        : undefined;
+      if ((value = storage.getItem(key)) && value !== 'undefined') {
+        var state = JSON.parse(value);
+        if (ignore) {
+          for (var i in ignore) {
+            var ig = ignore[i];
+            delete state[ig];
+          }
+        }
+        return state;
+      } else {
+        return undefined;
+      }
     } catch (err) {}
 
     return undefined;
@@ -56,10 +66,16 @@ export default function(options, storage, key) {
     const savedState = shvl.get(options, 'getState', getState)(key, storage);
 
     if (typeof savedState === 'object' && savedState !== null) {
-      store.replaceState(merge(store.state, savedState, {
-        arrayMerge: options.arrayMerger || function (store, saved) { return saved },
-        clone: false,
-      }));
+      store.replaceState(
+        merge(store.state, savedState, {
+          arrayMerge:
+            options.arrayMerger ||
+            function(store, saved) {
+              return saved;
+            },
+          clone: false
+        })
+      );
     }
 
     (options.subscriber || subscriber)(store)(function(mutation, state) {
@@ -72,4 +88,4 @@ export default function(options, storage, key) {
       }
     });
   };
-};
+}

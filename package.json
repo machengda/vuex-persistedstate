@@ -1,5 +1,5 @@
 {
-  "name": "vuex-persistedstate",
+  "name": "vuex-persistedstate-with-ignore",
   "description": "Persist Vuex state with localStorage.",
   "version": "2.5.0",
   "license": "MIT",
